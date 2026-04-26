@@ -1,0 +1,26 @@
+## Visual Studio ##
+.vs/
+[Bb]in/
+[Oo]bj/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+
+## VS Code ##
+.vscode/
+
+## Publish ##
+publish/
+*.publishsettings
+
+## ASP.NET Core ##
+ASPNETCORE_ENVIRONMENT
+appsettings.Development.json
+
+## SQL Server ##
+*.mdf
+*.ldf
+
+## Otros ##
+.DS_Store
