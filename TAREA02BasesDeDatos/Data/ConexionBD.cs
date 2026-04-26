@@ -31,28 +31,37 @@ namespace TAREA02BasesDeDatos.Data
                 SqlCommand cmd = new SqlCommand("dbo.sp_Login", connection);
                 cmd.CommandType = CommandType.StoredProcedure;
 
-                // Parámetros de entrada según estándar @in
+                // Entradas
                 cmd.Parameters.AddWithValue("@inUsername", username);
                 cmd.Parameters.AddWithValue("@inPassword", password);
                 cmd.Parameters.AddWithValue("@inIpPostIn", ip);
 
-                // Parámetro de salida según estándar @out (R8)
+                // Salida 1: El código de resultado (0, 50001, etc.)
                 SqlParameter outResult = new SqlParameter("@outResultCode", SqlDbType.Int)
                 {
                     Direction = ParameterDirection.Output
                 };
                 cmd.Parameters.Add(outResult);
 
+                // Salida 2: El ID del Usuario que acabamos de agregar al SP
+                SqlParameter outId = new SqlParameter("@outIdUsuario", SqlDbType.Int)
+                {
+                    Direction = ParameterDirection.Output
+                };
+                cmd.Parameters.Add(outId);
+
                 connection.Open();
 
-                using (SqlDataReader dr = cmd.ExecuteReader())
+                // IMPORTANTE: Usamos ExecuteNonQuery porque los datos vienen por parámetros de salida
+                cmd.ExecuteNonQuery();
+
+                // Leemos los valores de los parámetros después de la ejecución
+                resultCode = (outResult.Value != DBNull.Value) ? (int)outResult.Value : 50008;
+
+                if (resultCode == 0)
                 {
-                    if (dr.Read())
-                    {
-                        userId = Convert.ToInt32(dr["Id"]);
-                    }
+                    userId = (outId.Value != DBNull.Value) ? (int)outId.Value : -1;
                 }
-                resultCode = (int)cmd.Parameters["@outResultCode"].Value;
             }
             return resultCode;
         }
