@@ -42,7 +42,7 @@ BEGIN
         -- Validar que el saldo no resulte negativo
         IF @nuevoSaldo < 0
         BEGIN
-            SET @outResultCode = 50010;
+            SET @outResultCode = 50011;
             RETURN;
         END
 
