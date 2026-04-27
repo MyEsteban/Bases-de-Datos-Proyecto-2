@@ -176,11 +176,43 @@ namespace TAREA02BasesDeDatos.Data
         // ============================================================
         // R4: ACTUALIZAR EMPLEADO
         // ============================================================
+
+        // funcion aux
+        // Método para cargar los datos del empleado en la pantalla de Editar
+        public Empleado ObtenerEmpleadoPorId(int id)
+        {
+            Empleado emp = null;
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                string query = "SELECT Id, Nombre, ValorDocumentoIdentidad, IdPuesto, FechaContratacion FROM dbo.Empleado WHERE Id = @id";
+                SqlCommand cmd = new SqlCommand(query, connection);
+                cmd.Parameters.AddWithValue("@id", id);
+                connection.Open();
+                using (SqlDataReader dr = cmd.ExecuteReader())
+                {
+                    if (dr.Read())
+                    {
+                        emp = new Empleado
+                        {
+                            Id = (int)dr["Id"],
+                            Nombre = dr["Nombre"].ToString(),
+                            ValorDocumentoIdentidad = dr["ValorDocumentoIdentidad"].ToString(),
+                            IdPuesto = (int)dr["IdPuesto"],
+                            FechaContratacion = (DateTime)dr["FechaContratacion"]
+                        };
+                    }
+                }
+            }
+            return emp;
+        }
+
+
         public int ActualizarEmpleado(Empleado emp, int idUsuario, string ip)
         {
             int resultCode = 0;
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
+                // Usamos el nombre exacto de tu SP
                 SqlCommand cmd = new SqlCommand("dbo.sp_ActualizarEmpleado", connection);
                 cmd.CommandType = CommandType.StoredProcedure;
 
@@ -192,15 +224,12 @@ namespace TAREA02BasesDeDatos.Data
                 cmd.Parameters.AddWithValue("@inIdUsuario", idUsuario);
                 cmd.Parameters.AddWithValue("@inIpPostIn", ip);
 
-                SqlParameter outResult = new SqlParameter("@outResultCode", SqlDbType.Int)
-                {
-                    Direction = ParameterDirection.Output
-                };
+                SqlParameter outResult = new SqlParameter("@outResultCode", SqlDbType.Int) { Direction = ParameterDirection.Output };
                 cmd.Parameters.Add(outResult);
 
                 connection.Open();
                 cmd.ExecuteNonQuery();
-                resultCode = (int)cmd.Parameters["@outResultCode"].Value;
+                resultCode = (int)outResult.Value;
             }
             return resultCode;
         }
@@ -208,27 +237,25 @@ namespace TAREA02BasesDeDatos.Data
         // ============================================================
         // R4: BORRAR EMPLEADO (Lógico)
         // ============================================================
-        public int BorrarEmpleado(int id, int idUsuario, string ip)
+        public int BorrarEmpleado(int idEmpleado, int idUsuario, string ip)
         {
             int resultCode = 0;
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
+                // Usamos el nombre exacto de tu SP: sp_BorrarEmpleado
                 SqlCommand cmd = new SqlCommand("dbo.sp_BorrarEmpleado", connection);
                 cmd.CommandType = CommandType.StoredProcedure;
 
-                cmd.Parameters.AddWithValue("@inId", id);
+                cmd.Parameters.AddWithValue("@inId", idEmpleado);
                 cmd.Parameters.AddWithValue("@inIdUsuario", idUsuario);
                 cmd.Parameters.AddWithValue("@inIpPostIn", ip);
 
-                SqlParameter outResult = new SqlParameter("@outResultCode", SqlDbType.Int)
-                {
-                    Direction = ParameterDirection.Output
-                };
+                SqlParameter outResult = new SqlParameter("@outResultCode", SqlDbType.Int) { Direction = ParameterDirection.Output };
                 cmd.Parameters.Add(outResult);
 
                 connection.Open();
                 cmd.ExecuteNonQuery();
-                resultCode = (int)cmd.Parameters["@outResultCode"].Value;
+                resultCode = (int)outResult.Value;
             }
             return resultCode;
         }

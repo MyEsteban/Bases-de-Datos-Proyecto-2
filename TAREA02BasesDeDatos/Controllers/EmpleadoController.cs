@@ -75,5 +75,55 @@ namespace TAREA02BasesDeDatos.Controllers
             ViewBag.Puestos = _conexion.ConsultarPuestos();
             return View(emp);
         }
+
+        [HttpGet]
+        public IActionResult Editar(int id)
+        {
+            if (HttpContext.Session.GetInt32("IdUsuario") == null) return RedirectToAction("Index", "Login");
+
+            var empleado = _conexion.ObtenerEmpleadoPorId(id);
+            if (empleado == null) return RedirectToAction("Index");
+
+            ViewBag.Puestos = _conexion.ConsultarPuestos();
+            return View(empleado);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Editar(Empleado emp)
+        {
+            int idUsuario = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
+            string ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+
+            int resultCode = _conexion.ActualizarEmpleado(emp, idUsuario, ip);
+
+            if (resultCode == 0) return RedirectToAction("Index");
+
+            // Manejo de errores específicos según tus códigos de retorno del SP
+            ViewBag.Error = resultCode switch
+            {
+                50009 => "El nombre solo debe contener letras.",
+                50010 => "La cédula solo debe contener números.",
+                50006 => "Ya existe otro empleado con ese documento de identidad.",
+                _ => "Error inesperado: " + resultCode
+            };
+
+            ViewBag.Puestos = _conexion.ConsultarPuestos();
+            return View(emp);
+        }
+
+        [HttpPost]
+        public IActionResult Eliminar(int id)
+        {
+            int idUsuario = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
+            string ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+
+            _conexion.BorrarEmpleado(id, idUsuario, ip);
+            return RedirectToAction("Index");
+        }
+
+
     }
+
+        
 }
