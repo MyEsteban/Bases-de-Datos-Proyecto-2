@@ -54,5 +54,12 @@ namespace TAREA02BasesDeDatos.Controllers
             }
             return View(model);
         }
+
+        public IActionResult Logout()
+        {
+            // Limpiamos toda la sesión (R7)
+            HttpContext.Session.Clear();
+            return RedirectToAction("Index", "Login");
+        }
     }
 }

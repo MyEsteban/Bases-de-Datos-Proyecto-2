@@ -43,5 +43,37 @@ namespace TAREA02BasesDeDatos.Controllers
 
             return View(lista);
         }
+
+        [HttpGet]
+        public IActionResult Crear()
+        {
+            if (HttpContext.Session.GetInt32("IdUsuario") == null) return RedirectToAction("Index", "Login");
+
+            // Aquí podrías cargar una lista de puestos desde la BD si fuera necesario
+            ViewBag.Puestos = _conexion.ConsultarPuestos();
+            return View();
+        }
+
+
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Crear(Empleado emp)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+            string ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+
+            int resultCode = _conexion.InsertarEmpleado(emp, idUsuario.Value, ip);
+
+            if (resultCode == 0)
+            {
+                return RedirectToAction("Index");
+            }
+
+            ViewBag.Error = "Error al insertar: " + resultCode;
+            ViewBag.Puestos = _conexion.ConsultarPuestos();
+            return View(emp);
+        }
     }
 }

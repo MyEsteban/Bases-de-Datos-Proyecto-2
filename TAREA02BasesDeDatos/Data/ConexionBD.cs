@@ -139,9 +139,38 @@ namespace TAREA02BasesDeDatos.Data
 
                 connection.Open();
                 cmd.ExecuteNonQuery();
-                resultCode = (int)cmd.Parameters["@outResultCode"].Value;
+
+                resultCode = (outResult.Value != DBNull.Value) ? (int)outResult.Value : 50008;
             }
             return resultCode;
+        }
+
+
+        // funcion aux que consulta los puestos para llenar el dropdownlist en el formulario de empleado
+        // Para llenar el DropDownList del R3
+        public List<Puesto> ConsultarPuestos()
+        {
+            List<Puesto> lista = new List<Puesto>();
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                // Consulta limpia basada en tu imagen y ordenada por Nombre (R3)
+                string query = "SELECT Id, Nombre FROM dbo.Puesto ORDER BY Nombre ASC";
+                SqlCommand cmd = new SqlCommand(query, connection);
+
+                connection.Open();
+                using (SqlDataReader dr = cmd.ExecuteReader())
+                {
+                    while (dr.Read())
+                    {
+                        lista.Add(new Puesto
+                        {
+                            Id = Convert.ToInt32(dr["Id"]),
+                            Nombre = dr["Nombre"].ToString()
+                        });
+                    }
+                }
+            }
+            return lista;
         }
 
         // ============================================================
