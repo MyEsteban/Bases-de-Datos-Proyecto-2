@@ -1,47 +1,83 @@
 ﻿@model List<TAREA02BasesDeDatos.Models.Movimiento>
 
 <div class="container mt-4">
-    <div class="card mb-3">
-        <div class="card-header bg-info text-white">
+    <div class="card mb-3 shadow-sm">
+        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center" style="background-color: #17a2b8 !important;">
             <h4 class="mb-0">Historial de Vacaciones</h4>
+            <a asp-action="InsertarMovimiento" asp-route-id="@ViewBag.Empleado.Id" class="btn btn-success btn-sm">
+                <i class="bi bi-plus-circle"></i> Registrar Movimiento
+            </a>
         </div>
         <div class="card-body">
-            <div class="row">
-                <div class="col-md-4"><strong>Empleado:</strong> @ViewBag.Empleado.Nombre</div>
-                <div class="col-md-4"><strong>Documento:</strong> @ViewBag.Empleado.ValorDocumentoIdentidad</div>
-                <div class="col-md-4 text-right">
-                    <strong>Saldo Actual:</strong>
-                    <span class="badge badge-primary">@ViewBag.Empleado.SaldoVacaciones.ToString("F2") días</span>
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <strong>Empleado:</strong> @ViewBag.Empleado.Nombre
+                </div>
+                <div class="col-md-4">
+                    <strong>Documento:</strong> @ViewBag.Empleado.ValorDocumentoIdentidad
+                </div>
+                <div class="col-md-4 text-end">
+                    <span class="h5">Saldo Actual: </span>
+                    <span class="badge bg-primary fs-6" style="padding: 10px 15px;">
+                        @if (Model != null && Model.Any())
+                        {
+                            @Model.First().NuevoSaldo.ToString("N2")
+                        }
+                        else
+                        {
+                            @ViewBag.Empleado.SaldoVacaciones.ToString("N2")
+                        }
+                        días
+                    </span>
                 </div>
             </div>
         </div>
     </div>
 
-    <table class="table table-bordered text-center">
-        <thead class="thead-dark">
-            <tr>
-                <th>Fecha Mov.</th>
-                <th>Tipo</th>
-                <th>Monto</th>
-                <th>Saldo Resultante</th>
-                <th>Registrado por</th>
-                <th>Post Time</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model)
-            {
+    <div class="mb-3">
+        <a asp-action="Index" class="btn btn-secondary shadow-sm">
+            <i class="bi bi-arrow-left"></i> Volver a Lista
+        </a>
+    </div>
+
+    <div class="table-responsive shadow-sm rounded">
+        <table class="table table-hover text-center align-middle mb-0">
+            <thead class="table-dark">
                 <tr>
-                    <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
-                    <td>@item.TipoMovimiento (@item.TipoAccion)</td>
-                    <td class="@(item.Monto > 0 ? "text-success" : "text-danger")">
-                        @(item.Monto > 0 ? "+" : "")@item.Monto.ToString("F2")
-                    </td>
-                    <td><strong>@item.NuevoSaldo.ToString("F2")</strong></td>
-                    <td>@item.NombreUsuario</td>
-                    <td class="text-muted small">@item.PostTime.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                    <th>Fecha Mov.</th>
+                    <th>Tipo</th>
+                    <th>Monto</th>
+                    <th>Saldo Resultante</th>
+                    <th>Registrado por</th>
+                    <th>Post Time</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            <span class="text-uppercase small fw-bold">@item.TipoMovimiento</span>
+                            <br /><small class="text-muted">(@item.TipoAccion)</small>
+                        </td>
+                        <td class="@(item.Monto > 0 ? "text-success" : "text-danger") fw-bold">
+                            @(item.Monto > 0 ? "+" : "")@item.Monto.ToString("N2")
+                        </td>
+                        <td class="fw-bold">@item.NuevoSaldo.ToString("N2")</td>
+                        <td>@item.NombreUsuario</td>
+                        <td class="text-muted small">
+                            @item.PostTime.ToString("dd/MM/yyyy HH:mm:ss")
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">No hay movimientos registrados.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 </div>
