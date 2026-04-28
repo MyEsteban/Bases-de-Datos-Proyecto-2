@@ -1,0 +1,47 @@
+﻿@model List<TAREA02BasesDeDatos.Models.Movimiento>
+
+<div class="container mt-4">
+    <div class="card mb-3">
+        <div class="card-header bg-info text-white">
+            <h4 class="mb-0">Historial de Vacaciones</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4"><strong>Empleado:</strong> @ViewBag.Empleado.Nombre</div>
+                <div class="col-md-4"><strong>Documento:</strong> @ViewBag.Empleado.ValorDocumentoIdentidad</div>
+                <div class="col-md-4 text-right">
+                    <strong>Saldo Actual:</strong>
+                    <span class="badge badge-primary">@ViewBag.Empleado.SaldoVacaciones.ToString("F2") días</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <table class="table table-bordered text-center">
+        <thead class="thead-dark">
+            <tr>
+                <th>Fecha Mov.</th>
+                <th>Tipo</th>
+                <th>Monto</th>
+                <th>Saldo Resultante</th>
+                <th>Registrado por</th>
+                <th>Post Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
+                    <td>@item.TipoMovimiento (@item.TipoAccion)</td>
+                    <td class="@(item.Monto > 0 ? "text-success" : "text-danger")">
+                        @(item.Monto > 0 ? "+" : "")@item.Monto.ToString("F2")
+                    </td>
+                    <td><strong>@item.NuevoSaldo.ToString("F2")</strong></td>
+                    <td>@item.NombreUsuario</td>
+                    <td class="text-muted small">@item.PostTime.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

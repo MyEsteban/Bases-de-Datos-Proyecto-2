@@ -101,7 +101,7 @@ namespace TAREA02BasesDeDatos.Data
                             Id = Convert.ToInt32(dr["Id"]),
                             Nombre = dr["Nombre"].ToString(),
                             ValorDocumentoIdentidad = dr["ValorDocumentoIdentidad"].ToString(),
-                            Puesto = dr["Puesto"].ToString(),
+                            //Puesto = dr["Puesto"].ToString(),
                             SaldoVacaciones = Convert.ToDecimal(dr["SaldoVacaciones"]),
                             FechaContratacion = Convert.ToDateTime(dr["FechaContratacion"]),
                             EsActivo = Convert.ToBoolean(dr["EsActivo"])
@@ -153,10 +153,9 @@ namespace TAREA02BasesDeDatos.Data
             List<Puesto> lista = new List<Puesto>();
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                // Consulta limpia basada en tu imagen y ordenada por Nombre (R3)
-                string query = "SELECT Id, Nombre FROM dbo.Puesto ORDER BY Nombre ASC";
+                // SQL corregido: Eliminamos cualquier referencia a EsActivo
+                string query = "SELECT Id, Nombre, SalarioxHora FROM dbo.Puesto";
                 SqlCommand cmd = new SqlCommand(query, connection);
-
                 connection.Open();
                 using (SqlDataReader dr = cmd.ExecuteReader())
                 {
@@ -164,8 +163,9 @@ namespace TAREA02BasesDeDatos.Data
                     {
                         lista.Add(new Puesto
                         {
-                            Id = Convert.ToInt32(dr["Id"]),
+                            Id = (int)dr["Id"],
                             Nombre = dr["Nombre"].ToString()
+                            // Asegúrate de NO leer dr["EsActivo"] aquí
                         });
                     }
                 }
@@ -266,21 +266,15 @@ namespace TAREA02BasesDeDatos.Data
         public List<Movimiento> ConsultarMovimientos(int idEmpleado, int idUsuario, string ip, out int resultCode)
         {
             List<Movimiento> lista = new List<Movimiento>();
-            resultCode = 0;
-
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
                 SqlCommand cmd = new SqlCommand("dbo.sp_ConsultarMovimientos", connection);
                 cmd.CommandType = CommandType.StoredProcedure;
-
                 cmd.Parameters.AddWithValue("@inIdEmpleado", idEmpleado);
                 cmd.Parameters.AddWithValue("@inIdUsuario", idUsuario);
                 cmd.Parameters.AddWithValue("@inIpPostIn", ip);
 
-                SqlParameter outResult = new SqlParameter("@outResultCode", SqlDbType.Int)
-                {
-                    Direction = ParameterDirection.Output
-                };
+                SqlParameter outResult = new SqlParameter("@outResultCode", SqlDbType.Int) { Direction = ParameterDirection.Output };
                 cmd.Parameters.Add(outResult);
 
                 connection.Open();
@@ -295,11 +289,37 @@ namespace TAREA02BasesDeDatos.Data
                             TipoMovimiento = dr["TipoMovimiento"].ToString(),
                             TipoAccion = dr["TipoAccion"].ToString(),
                             Monto = Convert.ToDecimal(dr["Monto"]),
-                            NuevoSaldo = Convert.ToDecimal(dr["NuevoSaldo"])
+                            NuevoSaldo = Convert.ToDecimal(dr["NuevoSaldo"]),
+                            NombreUsuario = dr["NombreUsuario"].ToString(), // Coincide con el Alias del SP
+                            PostTime = Convert.ToDateTime(dr["PostTime"])   // Coincide con la columna de la DB
                         });
                     }
                 }
-                resultCode = (int)cmd.Parameters["@outResultCode"].Value;
+                resultCode = (outResult.Value != DBNull.Value) ? (int)outResult.Value : 0;
+            }
+            return lista;
+        }
+        // consulta aux para llenar el dropdownlist de tipos de movimiento en la vista de movimientos
+        public List<TipoMovimiento> ConsultarTiposMovimiento()
+        {
+            List<TipoMovimiento> lista = new List<TipoMovimiento>();
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                string query = "SELECT Id, Nombre, TipoAccion FROM dbo.TipoMovimiento";
+                SqlCommand cmd = new SqlCommand(query, connection);
+                connection.Open();
+                using (SqlDataReader dr = cmd.ExecuteReader())
+                {
+                    while (dr.Read())
+                    {
+                        lista.Add(new TipoMovimiento
+                        {
+                            Id = (int)dr["Id"],
+                            Nombre = dr["Nombre"].ToString(),
+                            TipoAccion = dr["TipoAccion"].ToString()
+                        });
+                    }
+                }
             }
             return lista;
         }
@@ -307,29 +327,27 @@ namespace TAREA02BasesDeDatos.Data
         // ============================================================
         // R6: REGISTRAR MOVIMIENTO
         // ============================================================
-        public int RegistrarMovimiento(int idEmpleado, int idTipo, decimal monto, int idUsuario, string ip)
+        public int InsertarMovimiento(int idEmpleado, int idTipoMovimiento, decimal monto, int idUsuario, string ip)
         {
             int resultCode = 0;
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                SqlCommand cmd = new SqlCommand("dbo.sp_RegistrarMovimiento", connection);
+                SqlCommand cmd = new SqlCommand("dbo.sp_InsertarMovimiento", connection);
                 cmd.CommandType = CommandType.StoredProcedure;
 
                 cmd.Parameters.AddWithValue("@inIdEmpleado", idEmpleado);
-                cmd.Parameters.AddWithValue("@inIdTipoMovimiento", idTipo);
+                cmd.Parameters.AddWithValue("@inIdTipoMovimiento", idTipoMovimiento);
                 cmd.Parameters.AddWithValue("@inMonto", monto);
                 cmd.Parameters.AddWithValue("@inIdUsuario", idUsuario);
                 cmd.Parameters.AddWithValue("@inIpPostIn", ip);
 
-                SqlParameter outResult = new SqlParameter("@outResultCode", SqlDbType.Int)
-                {
-                    Direction = ParameterDirection.Output
-                };
+                SqlParameter outResult = new SqlParameter("@outResultCode", SqlDbType.Int) { Direction = ParameterDirection.Output };
                 cmd.Parameters.Add(outResult);
 
                 connection.Open();
                 cmd.ExecuteNonQuery();
-                resultCode = (int)cmd.Parameters["@outResultCode"].Value;
+
+                resultCode = (outResult.Value != DBNull.Value) ? (int)outResult.Value : 50008;
             }
             return resultCode;
         }

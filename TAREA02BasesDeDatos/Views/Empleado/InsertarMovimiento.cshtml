@@ -1,0 +1,44 @@
+﻿@model TAREA02BasesDeDatos.Models.Movimiento
+@{
+    var emp = (TAREA02BasesDeDatos.Models.Empleado)ViewBag.Empleado;
+}
+
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-success text-white">
+            <h4>Registrar Movimiento: @emp.Nombre</h4>
+        </div>
+        <div class="card-body">
+            @if (ViewBag.Error != null)
+            {
+                <div class="alert alert-danger">@ViewBag.Error</div>
+            }
+
+            <form asp-action="InsertarMovimiento" method="post">
+                <input type="hidden" name="idEmpleado" value="@emp.Id" />
+                
+                <div class="mb-3">
+                    <label class="form-label">Tipo de Movimiento</label>
+                    <select name="idTipoMovimiento" class="form-select" required>
+                        <option value="">-- Seleccione un tipo --</option>
+                        @foreach (var tipo in ViewBag.Tipos)
+                        {
+                            <option value="@tipo.Id">@tipo.Nombre (@tipo.TipoAccion)</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Monto (Días)</label>
+                    <input type="number" step="0.01" name="monto" class="form-control" placeholder="Ej: 1.5" required />
+                    <small class="text-muted">Use valores positivos. El sistema aplicará la suma o resta según el tipo.</small>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <a asp-action="Movimientos" asp-route-id="@emp.Id" class="btn btn-secondary me-2">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Guardar Movimiento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -123,6 +123,62 @@ namespace TAREA02BasesDeDatos.Controllers
         }
 
 
+        public IActionResult Movimientos(int id)
+        {
+            // 1. Verificación de seguridad
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+            if (idUsuario == null) return RedirectToAction("Index", "Login");
+
+            string ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+            int resCode;
+
+            // 2. Obtener datos del empleado para el encabezado (R5)
+            var empleado = _conexion.ObtenerEmpleadoPorId(id);
+            if (empleado == null) return RedirectToAction("Index");
+
+            ViewBag.Empleado = empleado;
+
+            // 3. Obtener la lista de movimientos mediante el SP
+            var listaMovs = _conexion.ConsultarMovimientos(id, idUsuario.Value, ip, out resCode);
+
+            if (resCode != 0)
+            {
+                ViewBag.Error = "Error al consultar movimientos: " + resCode;
+            }
+
+            return View(listaMovs);
+        }
+
+        [HttpGet]
+        public IActionResult InsertarMovimiento(int id)
+        {
+            if (HttpContext.Session.GetInt32("IdUsuario") == null) return RedirectToAction("Index", "Login");
+
+            var empleado = _conexion.ObtenerEmpleadoPorId(id);
+            ViewBag.Empleado = empleado;
+            ViewBag.Tipos = _conexion.ConsultarTiposMovimiento();
+
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult InsertarMovimiento(int idEmpleado, int idTipoMovimiento, decimal monto)
+        {
+            int idUsuario = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
+            string ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+
+            // Llamamos al método que ejecuta el SP sp_InsertarMovimiento
+            int resultCode = _conexion.InsertarMovimiento(idEmpleado, idTipoMovimiento, monto, idUsuario, ip);
+
+            if (resultCode == 0) return RedirectToAction("Movimientos", new { id = idEmpleado });
+
+            // R6: Si el SP devuelve error (ej: saldo negativo), lo mostramos
+            ViewBag.Error = "No se pudo realizar el movimiento. Código: " + resultCode;
+            ViewBag.Empleado = _conexion.ObtenerEmpleadoPorId(idEmpleado);
+            ViewBag.Tipos = _conexion.ConsultarTiposMovimiento();
+            return View();
+        }
+
     }
 
         
