@@ -19,11 +19,26 @@
                 
                 <div class="mb-3">
                     <label class="form-label">Tipo de Movimiento</label>
-                    <select name="idTipoMovimiento" class="form-select" required>
+                    <select name="idTipoMovimiento" class="form-select" required id="tipoMovimientoSelect">
                         <option value="">-- Seleccione un tipo --</option>
-                        @foreach (var tipo in ViewBag.Tipos)
+                        @if (ViewBag.Tipos != null)
                         {
-                            <option value="@tipo.Id">@tipo.Nombre (@tipo.TipoAccion)</option>
+                            foreach (var tipo in ViewBag.Tipos)
+                            {
+                                // REGLA: Si el saldo es <= 0, los débitos se deshabilitan
+                                if (emp.SaldoVacaciones <= 0 && tipo.TipoAccion == "Debito")
+                                {
+                                    <option value="@tipo.Id" disabled>
+                                        @tipo.Nombre (@tipo.TipoAccion) - BLOQUEADO (Saldo insuficiente)
+                                    </option>
+                                }
+                                else
+                                {
+                                    <option value="@tipo.Id">
+                                        @tipo.Nombre (@tipo.TipoAccion)
+                                    </option>
+                                }
+                            }
                         }
                     </select>
                 </div>

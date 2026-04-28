@@ -62,7 +62,9 @@
                     <tr>
                         <td><strong>@item.Nombre</strong></td>
                         <td>@item.ValorDocumentoIdentidad</td>
-                        
+        
+                        <td>@item.NombrePuesto</td>
+
                         <td class="text-primary fw-bold">@item.SaldoVacaciones.ToString("N2")</td>
                         <td>@item.FechaContratacion.ToShortDateString()</td>
                         <td>
@@ -73,12 +75,12 @@
                         <td class="text-center">
                             <div class="btn-group btn-group-sm">
                                 <a asp-action="Editar" asp-route-id="@item.Id" class="btn btn-warning">Editar</a>
-                                <a asp-action="Movimientos" asp-route-id="@item.Id" class="btn btn-info text-white" title="Ver Movimientos">
+                                <a asp-action="Movimientos" asp-route-id="@item.Id" class="btn btn-info text-white">
                                     <i class="bi bi-eye"></i> Movs
                                 </a>
                                 <form asp-action="Eliminar" asp-route-id="@item.Id" method="post" style="display:inline;"
-                                      onsubmit="return confirm('Valor de identidad: @item.ValorDocumentoIdentidad \nNombre: @item.Nombre \n\n¿Está seguro de eliminar este empleado?');">
-                                    <button type="submit" class="btn btn-danger" title="Borrar">Eliminar</button>
+                                      onsubmit="return confirm('¿Eliminar a @item.Nombre?');">
+                                    <button type="submit" class="btn btn-danger">Eliminar</button>
                                 </form>
                             </div>
                         </td>

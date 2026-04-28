@@ -101,7 +101,7 @@ namespace TAREA02BasesDeDatos.Data
                             Id = Convert.ToInt32(dr["Id"]),
                             Nombre = dr["Nombre"].ToString(),
                             ValorDocumentoIdentidad = dr["ValorDocumentoIdentidad"].ToString(),
-                            //Puesto = dr["Puesto"].ToString(),
+                            NombrePuesto = dr["Puesto"].ToString(),
                             SaldoVacaciones = Convert.ToDecimal(dr["SaldoVacaciones"]),
                             FechaContratacion = Convert.ToDateTime(dr["FechaContratacion"]),
                             EsActivo = Convert.ToBoolean(dr["EsActivo"])
