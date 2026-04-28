@@ -1,4 +1,4 @@
-/****** Object:  StoredProcedure [dbo].[sp_Login]    Script Date: 24/4/2026 14:59:51 ******/
+/****** Object:  StoredProcedure [dbo].[sp_Login]    Script Date: 28/4/2026 09:01:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -8,6 +8,7 @@ ALTER PROCEDURE [dbo].[sp_Login]
     , @inPassword VARCHAR(50)
     , @inIpPostIn VARCHAR(50) -- Cambiado para ser consistente con el estándar
     , @outResultCode INT OUTPUT
+    , @outIdUsuario INT OUTPUT  
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -76,6 +77,7 @@ BEGIN
 
         -- Login exitoso
         SET @outResultCode = 0;
+        SET @outIdUsuario = @userId;
 
         INSERT INTO dbo.BitacoraEvento (
             idTipoEvento
