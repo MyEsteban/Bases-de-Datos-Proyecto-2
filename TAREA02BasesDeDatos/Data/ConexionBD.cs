@@ -18,6 +18,97 @@ namespace TAREA02BasesDeDatos.Data
             _connectionString = configuration.GetConnectionString("AzureConnection");
         }
 
+
+
+        // funciones aux
+        public List<Puesto> ConsultarPuestos()
+        {
+            List<Puesto> lista = new List<Puesto>();
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                // Llamada al nuevo SP
+                SqlCommand cmd = new SqlCommand("dbo.sp_ConsultarPuestos", connection);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                connection.Open();
+                using (SqlDataReader dr = cmd.ExecuteReader())
+                {
+                    while (dr.Read())
+                    {
+                        lista.Add(new Puesto
+                        {
+                            Id = (int)dr["Id"],
+                            Nombre = dr["Nombre"].ToString()
+                        });
+                    }
+                }
+            }
+            return lista;
+        }
+
+        public Empleado ObtenerEmpleadoPorId(int id)
+        {
+            Empleado emp = null;
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                // Llamada al nuevo SP
+                SqlCommand cmd = new SqlCommand("dbo.sp_ObtenerEmpleadoPorId", connection);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                // Parámetro según el nombre en el SP
+                cmd.Parameters.AddWithValue("@inId", id);
+
+                connection.Open();
+                using (SqlDataReader dr = cmd.ExecuteReader())
+                {
+                    if (dr.Read())
+                    {
+                        emp = new Empleado
+                        {
+                            Id = (int)dr["Id"],
+                            Nombre = dr["Nombre"].ToString(),
+                            ValorDocumentoIdentidad = dr["ValorDocumentoIdentidad"].ToString(),
+                            IdPuesto = (int)dr["IdPuesto"],
+                            FechaContratacion = (DateTime)dr["FechaContratacion"],
+                            SaldoVacaciones = Convert.ToDecimal(dr["SaldoVacaciones"])
+                        };
+                    }
+                }
+            }
+            return emp;
+        }
+
+        public List<TipoMovimiento> ConsultarTiposMovimiento()
+        {
+            List<TipoMovimiento> lista = new List<TipoMovimiento>();
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                // Llamada al nuevo SP
+                SqlCommand cmd = new SqlCommand("dbo.sp_ConsultarTiposMovimiento", connection);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                connection.Open();
+                using (SqlDataReader dr = cmd.ExecuteReader())
+                {
+                    while (dr.Read())
+                    {
+                        lista.Add(new TipoMovimiento
+                        {
+                            Id = (int)dr["Id"],
+                            Nombre = dr["Nombre"].ToString(),
+                            TipoAccion = dr["TipoAccion"].ToString()
+                        });
+                    }
+                }
+            }
+            return lista;
+        }
+
+
+
+
+
+
         // ============================================================
         // R1: LOGIN (Valida intentos, bloqueos y registra bitácora)
         // ============================================================
@@ -146,68 +237,13 @@ namespace TAREA02BasesDeDatos.Data
         }
 
 
-        // funcion aux que consulta los puestos para llenar el dropdownlist en el formulario de empleado
-        // Para llenar el DropDownList del R3
-        public List<Puesto> ConsultarPuestos()
-        {
-            List<Puesto> lista = new List<Puesto>();
-            using (SqlConnection connection = new SqlConnection(_connectionString))
-            {
-                // SQL corregido: Eliminamos cualquier referencia a EsActivo
-                string query = "SELECT Id, Nombre, SalarioxHora FROM dbo.Puesto";
-                SqlCommand cmd = new SqlCommand(query, connection);
-                connection.Open();
-                using (SqlDataReader dr = cmd.ExecuteReader())
-                {
-                    while (dr.Read())
-                    {
-                        lista.Add(new Puesto
-                        {
-                            Id = (int)dr["Id"],
-                            Nombre = dr["Nombre"].ToString()
-                            // Asegúrate de NO leer dr["EsActivo"] aquí
-                        });
-                    }
-                }
-            }
-            return lista;
-        }
+        
 
         // ============================================================
         // R4: ACTUALIZAR EMPLEADO
         // ============================================================
 
-        // funcion aux
-        // Método para cargar los datos del empleado en la pantalla de Editar
-        public Empleado ObtenerEmpleadoPorId(int id)
-        {
-            Empleado emp = null;
-            using (SqlConnection connection = new SqlConnection(_connectionString))
-            {
-                // FALTABA: SaldoVacaciones en el SELECT
-                string query = "SELECT Id, Nombre, ValorDocumentoIdentidad, IdPuesto, FechaContratacion, SaldoVacaciones FROM dbo.Empleado WHERE Id = @id";
-                SqlCommand cmd = new SqlCommand(query, connection);
-                cmd.Parameters.AddWithValue("@id", id);
-                connection.Open();
-                using (SqlDataReader dr = cmd.ExecuteReader())
-                {
-                    if (dr.Read())
-                    {
-                        emp = new Empleado
-                        {
-                            Id = (int)dr["Id"],
-                            Nombre = dr["Nombre"].ToString(),
-                            ValorDocumentoIdentidad = dr["ValorDocumentoIdentidad"].ToString(),
-                            IdPuesto = (int)dr["IdPuesto"],
-                            FechaContratacion = (DateTime)dr["FechaContratacion"],
-                            // AGREGAR ESTA LÍNEA:
-                            SaldoVacaciones = Convert.ToDecimal(dr["SaldoVacaciones"])
-                        };
-                    }
-                }
-            }
-            return emp;
-        }
+        
 
 
         public int ActualizarEmpleado(Empleado emp, int idUsuario, string ip)
@@ -302,30 +338,7 @@ namespace TAREA02BasesDeDatos.Data
             }
             return lista;
         }
-        // consulta aux para llenar el dropdownlist de tipos de movimiento en la vista de movimientos
-        public List<TipoMovimiento> ConsultarTiposMovimiento()
-        {
-            List<TipoMovimiento> lista = new List<TipoMovimiento>();
-            using (SqlConnection connection = new SqlConnection(_connectionString))
-            {
-                string query = "SELECT Id, Nombre, TipoAccion FROM dbo.TipoMovimiento";
-                SqlCommand cmd = new SqlCommand(query, connection);
-                connection.Open();
-                using (SqlDataReader dr = cmd.ExecuteReader())
-                {
-                    while (dr.Read())
-                    {
-                        lista.Add(new TipoMovimiento
-                        {
-                            Id = (int)dr["Id"],
-                            Nombre = dr["Nombre"].ToString(),
-                            TipoAccion = dr["TipoAccion"].ToString()
-                        });
-                    }
-                }
-            }
-            return lista;
-        }
+        
 
         // ============================================================
         // R6: REGISTRAR MOVIMIENTO
@@ -354,5 +367,9 @@ namespace TAREA02BasesDeDatos.Data
             }
             return resultCode;
         }
+
+        
+
+
     }
 }
