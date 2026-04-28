@@ -1,112 +1,115 @@
-﻿CREATE PROCEDURE dbo.sp_InsertarMovimiento
-    @inIdEmpleado INT,
-    @inIdTipoMovimiento INT,
-    @inMonto DECIMAL(10,2),
-    @inFecha DATE,
-    @inIdPostByUser INT,
-    @inPostInIP VARCHAR(50),
-    @outResultCode INT OUTPUT
+/****** Object:  StoredProcedure [dbo].[sp_InsertarMovimiento]    Script Date: 28/4/2026 08:59:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[sp_InsertarMovimiento]
+    @inIdEmpleado INT
+    , @inIdTipoMovimiento INT
+    , @inMonto DECIMAL(18, 2)
+    , @inIdUsuario INT
+    , @inIpPostIn VARCHAR(64)
+    , @outResultCode INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
-
-    DECLARE
-        @saldoActual DECIMAL(10,2),
-        @nuevoSaldo DECIMAL(10,2),
-        @tipoAccion VARCHAR(10);
+    DECLARE @NuevoSaldo DECIMAL(18, 2);
+    DECLARE @FechaActual DATETIME = GETDATE();
+    DECLARE @TipoAccion VARCHAR(16);
 
     BEGIN TRY
-
-        SELECT
-            @saldoActual = SaldoVacaciones
-        FROM dbo.Empleado
-        WHERE Id = @inIdEmpleado;
-
-        SELECT
-            @tipoAccion = TipoAccion
-        FROM dbo.TipoMovimiento
-        WHERE Id = @inIdTipoMovimiento;
-
-        -- Crédito o Débito
-        IF @tipoAccion = 'Credito'
-            SET @nuevoSaldo = @saldoActual + @inMonto;
-        ELSE
-            SET @nuevoSaldo = @saldoActual - @inMonto;
-
-        -- Validar saldo negativo
-        IF @nuevoSaldo < 0
-        BEGIN
-            SET @outResultCode = 50010;
-            RETURN;
-        END
-
-        BEGIN TRANSACTION
-
-            INSERT INTO dbo.Movimiento (
-                IdEmpleado,
-                IdTipoMovimiento,
-                Fecha,
-                Monto,
-                NuevoSaldo,
-                IdPostByUser,
-                PostInIP
-            )
-            VALUES (
-                @inIdEmpleado,
-                @inIdTipoMovimiento,
-                @inFecha,
-                @inMonto,
-                @nuevoSaldo,
-                @inIdPostByUser,
-                @inPostInIP
-            );
-
-            UPDATE dbo.Empleado
-            SET SaldoVacaciones = @nuevoSaldo
-            WHERE Id = @inIdEmpleado;
-
-            INSERT INTO dbo.BitacoraEvento (
-                idTipoEvento,
-                Descripcion,
-                IdPostByUser,
-                PostInIP
-            )
-            VALUES (
-                4,
-                'Movimiento insertado correctamente',
-                @inIdPostByUser,
-                @inPostInIP
-            );
-
-        COMMIT TRANSACTION
-
         SET @outResultCode = 0;
 
+        -- 1. Obtenemos la acción (Crédito/Débito) del tipo de movimiento
+        SELECT @TipoAccion = TipoAccion 
+        FROM dbo.TipoMovimiento 
+        WHERE Id = @inIdTipoMovimiento;
+
+        -- 2. Calculamos el Nuevo Saldo según la acción
+        IF (@TipoAccion = 'Debito')
+        BEGIN
+            -- Si es débito, restamos el monto al saldo actual
+            SELECT @NuevoSaldo = SaldoVacaciones - @inMonto 
+            FROM dbo.Empleado 
+            WHERE Id = @inIdEmpleado;
+        END
+        ELSE
+        BEGIN
+            -- Si es crédito (o cualquier otro), sumamos
+            SELECT @NuevoSaldo = SaldoVacaciones + @inMonto 
+            FROM dbo.Empleado 
+            WHERE Id = @inIdEmpleado;
+        END
+
+        BEGIN TRANSACTION;
+            -- 3. Inserción en Movimiento
+            INSERT INTO dbo.Movimiento (
+                IdEmpleado
+                , IdTipoMovimiento
+                , Fecha
+                , Monto
+                , NuevoSaldo
+                , IdUsuario
+                , IpPostIn
+                , PostTime
+            )
+            VALUES (
+                @inIdEmpleado
+                , @inIdTipoMovimiento
+                , @FechaActual
+                , @inMonto
+                , @NuevoSaldo
+                , @inIdUsuario
+                , @inIpPostIn
+                , @FechaActual
+            );
+
+            -- 4. Actualización del maestro Empleado
+            UPDATE dbo.Empleado 
+            SET SaldoVacaciones = @NuevoSaldo 
+            WHERE Id = @inIdEmpleado;
+
+            -- 5. Bitácora
+            INSERT INTO dbo.BitacoraEvento (
+                idTipoEvento
+                , Descripcion
+                , IdUsuario
+                , IpPostIn
+                , PostTime
+            )
+            VALUES (
+                16
+                , CONCAT('Mov registrado. Tipo: ', @TipoAccion, ' Emp ID: ', @inIdEmpleado)
+                , @inIdUsuario
+                , @inIpPostIn
+                , @FechaActual
+            );
+
+        COMMIT TRANSACTION;
     END TRY
     BEGIN CATCH
-
-        ROLLBACK TRANSACTION;
-
-        SET @outResultCode = 50008;
-
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        SET @outResultCode = 50009;
+        -- 5. REGISTRO DE ERROR EN TABLA ADMINISTRATIVA
         INSERT INTO dbo.DBError (
-            UserName,
-            Number,
-            State,
-            Severity,
-            Line,
-            [Procedure],
-            Message
+            UserName
+            , Number
+            , State
+            , Severity
+            , Line
+            , [Procedure]
+            , Message
+            , DateTime
         )
         VALUES (
-            'sp_InsertarMovimiento',
-            ERROR_NUMBER(),
-            ERROR_STATE(),
-            ERROR_SEVERITY(),
-            ERROR_LINE(),
-            ERROR_PROCEDURE(),
-            ERROR_MESSAGE()
+            SUSER_SNAME()
+            , ERROR_NUMBER()
+            , ERROR_STATE()
+            , ERROR_SEVERITY()
+            , ERROR_LINE()
+            , 'sp_InsertarMovimiento'
+            , ERROR_MESSAGE()
+            , GETDATE()
         );
-
     END CATCH
 END;
