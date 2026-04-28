@@ -1,4 +1,9 @@
-CREATE OR ALTER PROCEDURE dbo.sp_BorrarEmpleado
+/****** Object:  StoredProcedure [dbo].[sp_BorrarEmpleado]    Script Date: 28/4/2026 09:08:35 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER   PROCEDURE [dbo].[sp_BorrarEmpleado]
     @inId INT
     , @inIdUsuario INT -- Usuario que ejecuta el borrado
     , @inIpPostIn VARCHAR(64)
@@ -73,4 +78,3 @@ BEGIN
         );
     END CATCH
 END;
-GO
