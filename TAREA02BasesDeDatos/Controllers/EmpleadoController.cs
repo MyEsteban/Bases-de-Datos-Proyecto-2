@@ -152,10 +152,11 @@ namespace TAREA02BasesDeDatos.Controllers
         [HttpGet]
         public IActionResult InsertarMovimiento(int id)
         {
-            if (HttpContext.Session.GetInt32("IdUsuario") == null) return RedirectToAction("Index", "Login");
+            if (HttpContext.Session.GetInt32("IdUsuario") == null)
+                return RedirectToAction("Index", "Login");
 
             var empleado = _conexion.ObtenerEmpleadoPorId(id);
-            ViewBag.Empleado = empleado;
+            ViewBag.Empleado = empleado; // Para mostrar Nombre y ValorDocumentoIdentidad arriba
             ViewBag.Tipos = _conexion.ConsultarTiposMovimiento();
 
             return View();
@@ -164,16 +165,20 @@ namespace TAREA02BasesDeDatos.Controllers
         [HttpPost]
         public IActionResult InsertarMovimiento(int idEmpleado, int idTipoMovimiento, decimal monto)
         {
-            int idUsuario = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
-            string ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+            int idUsuario = HttpContext.Session.GetInt32("IdUsuario") ?? 1;
+            string ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "::1";
 
-            // Llamamos al método que ejecuta el SP sp_InsertarMovimiento
+            // Ejecuta el SP que actualiza saldo en Empleado y mete el row en Movimiento
             int resultCode = _conexion.InsertarMovimiento(idEmpleado, idTipoMovimiento, monto, idUsuario, ip);
 
-            if (resultCode == 0) return RedirectToAction("Movimientos", new { id = idEmpleado });
+            if (resultCode == 0)
+            {
+                // Si todo salió bien, volvemos al historial para ver el nuevo saldo
+                return RedirectToAction("Movimientos", new { id = idEmpleado });
+            }
 
-            // R6: Si el SP devuelve error (ej: saldo negativo), lo mostramos
-            ViewBag.Error = "No se pudo realizar el movimiento. Código: " + resultCode;
+            // Si hubo error (ej: el resultCode que definimos en el CATCH del SP)
+            ViewBag.Error = "Error en la base de datos. Código: " + resultCode;
             ViewBag.Empleado = _conexion.ObtenerEmpleadoPorId(idEmpleado);
             ViewBag.Tipos = _conexion.ConsultarTiposMovimiento();
             return View();

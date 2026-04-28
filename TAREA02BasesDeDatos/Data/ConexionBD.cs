@@ -345,9 +345,9 @@ namespace TAREA02BasesDeDatos.Data
                 cmd.Parameters.Add(outResult);
 
                 connection.Open();
-                cmd.ExecuteNonQuery();
+                cmd.ExecuteNonQuery(); // Aquí es donde fallaba por la fecha
 
-                resultCode = (outResult.Value != DBNull.Value) ? (int)outResult.Value : 50008;
+                resultCode = (outResult.Value != DBNull.Value) ? (int)outResult.Value : 0;
             }
             return resultCode;
         }
