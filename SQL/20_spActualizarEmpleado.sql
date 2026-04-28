@@ -1,4 +1,9 @@
-CREATE OR ALTER PROCEDURE dbo.sp_ActualizarEmpleado
+/****** Object:  StoredProcedure [dbo].[sp_ActualizarEmpleado]    Script Date: 28/4/2026 09:07:25 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER   PROCEDURE [dbo].[sp_ActualizarEmpleado]
     @inId INT
     , @inNombre VARCHAR(100)
     , @inValorDocumentoIdentidad VARCHAR(20)
@@ -104,4 +109,3 @@ BEGIN
         );
     END CATCH
 END;
-GO
