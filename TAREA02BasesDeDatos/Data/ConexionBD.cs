@@ -184,7 +184,8 @@ namespace TAREA02BasesDeDatos.Data
             Empleado emp = null;
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                string query = "SELECT Id, Nombre, ValorDocumentoIdentidad, IdPuesto, FechaContratacion FROM dbo.Empleado WHERE Id = @id";
+                // FALTABA: SaldoVacaciones en el SELECT
+                string query = "SELECT Id, Nombre, ValorDocumentoIdentidad, IdPuesto, FechaContratacion, SaldoVacaciones FROM dbo.Empleado WHERE Id = @id";
                 SqlCommand cmd = new SqlCommand(query, connection);
                 cmd.Parameters.AddWithValue("@id", id);
                 connection.Open();
@@ -198,7 +199,9 @@ namespace TAREA02BasesDeDatos.Data
                             Nombre = dr["Nombre"].ToString(),
                             ValorDocumentoIdentidad = dr["ValorDocumentoIdentidad"].ToString(),
                             IdPuesto = (int)dr["IdPuesto"],
-                            FechaContratacion = (DateTime)dr["FechaContratacion"]
+                            FechaContratacion = (DateTime)dr["FechaContratacion"],
+                            // AGREGAR ESTA LÍNEA:
+                            SaldoVacaciones = Convert.ToDecimal(dr["SaldoVacaciones"])
                         };
                     }
                 }

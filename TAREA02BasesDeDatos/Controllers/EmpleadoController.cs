@@ -168,23 +168,21 @@ namespace TAREA02BasesDeDatos.Controllers
             int idUsuario = HttpContext.Session.GetInt32("IdUsuario") ?? 1;
             string ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "::1";
 
-            // Ejecuta el SP que actualiza saldo en Empleado y mete el row en Movimiento
             int resultCode = _conexion.InsertarMovimiento(idEmpleado, idTipoMovimiento, monto, idUsuario, ip);
 
             if (resultCode == 0)
             {
-                // Si todo salió bien, volvemos al historial para ver el nuevo saldo
+                // IMPORTANTE: Esto obliga a la web a recargar el empleado con su nuevo saldo
                 return RedirectToAction("Movimientos", new { id = idEmpleado });
             }
 
-            // Si hubo error (ej: el resultCode que definimos en el CATCH del SP)
-            ViewBag.Error = "Error en la base de datos. Código: " + resultCode;
+            // Si hubo error, volvemos a consultar al empleado para que el saldo en pantalla sea real
+            ViewBag.Error = "Error: " + resultCode;
             ViewBag.Empleado = _conexion.ObtenerEmpleadoPorId(idEmpleado);
             ViewBag.Tipos = _conexion.ConsultarTiposMovimiento();
             return View();
         }
 
-    }
 
-        
+    }
 }

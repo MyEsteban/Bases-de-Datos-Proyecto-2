@@ -3,57 +3,44 @@
     var emp = (TAREA02BasesDeDatos.Models.Empleado)ViewBag.Empleado;
 }
 
-<div class="container mt-4">
-    <div class="card shadow">
-        <div class="card-header bg-success text-white">
-            <h4>Registrar Movimiento: @emp.Nombre</h4>
-        </div>
-        <div class="card-body">
-            @if (ViewBag.Error != null)
-            {
-                <div class="alert alert-danger">@ViewBag.Error</div>
-            }
-
-            <form asp-action="InsertarMovimiento" method="post">
-                <input type="hidden" name="idEmpleado" value="@emp.Id" />
-                
-                <div class="mb-3">
-                    <label class="form-label">Tipo de Movimiento</label>
-                    <select name="idTipoMovimiento" class="form-select" required id="tipoMovimientoSelect">
-                        <option value="">-- Seleccione un tipo --</option>
-                        @if (ViewBag.Tipos != null)
+<div class="card-body">
+    <form asp-action="InsertarMovimiento" method="post">
+        <input type="hidden" name="idEmpleado" value="@emp.Id" />
+        
+        <div class="mb-3">
+            <label class="form-label">Tipo de Movimiento</label>
+            <select name="idTipoMovimiento" class="form-select" required>
+                <option value="">-- Seleccione un tipo --</option>
+                @if (ViewBag.Tipos != null)
+                {
+                    foreach (var tipo in ViewBag.Tipos)
+                    {
+                        @* REGLA: Si el saldo es 0 o menos, los débitos se bloquean *@
+                        if (tipo.TipoAccion.ToLower().Contains("deb") && emp.SaldoVacaciones <= 0)
                         {
-                            foreach (var tipo in ViewBag.Tipos)
-                            {
-                                // REGLA: Si el saldo es <= 0, los débitos se deshabilitan
-                                if (emp.SaldoVacaciones <= 0 && tipo.TipoAccion == "Debito")
-                                {
-                                    <option value="@tipo.Id" disabled>
-                                        @tipo.Nombre (@tipo.TipoAccion) - BLOQUEADO (Saldo insuficiente)
-                                    </option>
-                                }
-                                else
-                                {
-                                    <option value="@tipo.Id">
-                                        @tipo.Nombre (@tipo.TipoAccion)
-                                    </option>
-                                }
-                            }
+                            <option value="@tipo.Id" disabled>
+                                @tipo.Nombre (@tipo.TipoAccion) - BLOQUEADO
+                            </option>
                         }
-                    </select>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Monto (Días)</label>
-                    <input type="number" step="0.01" name="monto" class="form-control" placeholder="Ej: 1.5" required />
-                    <small class="text-muted">Use valores positivos. El sistema aplicará la suma o resta según el tipo.</small>
-                </div>
-
-                <div class="d-flex justify-content-end">
-                    <a asp-action="Movimientos" asp-route-id="@emp.Id" class="btn btn-secondary me-2">Cancelar</a>
-                    <button type="submit" class="btn btn-primary">Guardar Movimiento</button>
-                </div>
-            </form>
+                        else
+                        {
+                            <option value="@tipo.Id">
+                                @tipo.Nombre (@tipo.TipoAccion)
+                            </option>
+                        }
+                    }
+                }
+            </select>
         </div>
-    </div>
+
+        <div class="mb-3">
+            <label class="form-label">Monto (Días)</label>
+            <input type="number" step="0.01" name="monto" class="form-control" required />
+        </div>
+
+        <div class="d-flex justify-content-end">
+            <a asp-action="Movimientos" asp-route-id="@emp.Id" class="btn btn-secondary me-2">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Guardar Movimiento</button>
+        </div>
+    </form>
 </div>
