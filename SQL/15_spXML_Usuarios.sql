@@ -1,14 +1,19 @@
+/****** Object:  StoredProcedure [dbo].[sp_CargarUsuariosXML]    Script Date: 28/4/2026 21:57:40 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE OR ALTER PROCEDURE dbo.sp_CargarUsuariosXML
-    @outResultCode INT OUTPUT
+
+-- 5. USUARIOS (Ajustado a @Nombre y @Pass del XML)
+ALTER PROCEDURE [dbo].[sp_CargarUsuariosXML] 
+    @outResultCode INT OUTPUT 
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @xmlData XML = '
-    <Datos>
+
+    -- XML segmentado verticalmente para evitar la línea larga
+    DECLARE @xmlData XML = 
+    '<Datos>
         <Usuarios>
             <usuario Id="1" Nombre="UsuarioScripts" Pass="UsuarioScripts"/>
             <usuario Id="2" Nombre="mgarrison" Pass=")*2LnSr^lk"/>
@@ -25,19 +30,43 @@ BEGIN
 
     BEGIN TRY
         BEGIN TRANSACTION
-            INSERT INTO dbo.Usuario (Id, Username, Password)
+            INSERT INTO dbo.Usuario (
+                Username
+                , Password
+            )
             SELECT 
-                T.Item.value('@Id', 'INT')
-                , T.Item.value('@Nombre', 'VARCHAR(50)')
+                T.Item.value('@Nombre', 'VARCHAR(50)')
                 , T.Item.value('@Pass', 'VARCHAR(50)')
             FROM @xmlData.nodes('/Datos/Usuarios/usuario') AS T(Item);
         COMMIT TRANSACTION
+        
         SET @outResultCode = 0;
     END TRY
     BEGIN CATCH
-        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        IF @@TRANCOUNT > 0 
+            ROLLBACK TRANSACTION; 
+
         SET @outResultCode = 50008;
-        INSERT INTO dbo.DBError (UserName, Number, State, Severity, Line, [Procedure], Message)
-        VALUES (SUSER_SNAME(), ERROR_NUMBER(), ERROR_STATE(), ERROR_SEVERITY(), ERROR_LINE(), 'sp_CargarUsuariosXML', ERROR_MESSAGE());
+
+        INSERT INTO dbo.DBError (
+            UserName
+            , Number
+            , State
+            , Severity
+            , Line
+            , [Procedure]
+            , Message
+            , DateTime
+        )
+        VALUES (
+            SUSER_SNAME()
+            , ERROR_NUMBER()
+            , ERROR_STATE()
+            , ERROR_SEVERITY()
+            , ERROR_LINE()
+            , 'sp_CargarUsuariosXML'
+            , ERROR_MESSAGE()
+            , GETDATE()
+        );
     END CATCH
 END;
