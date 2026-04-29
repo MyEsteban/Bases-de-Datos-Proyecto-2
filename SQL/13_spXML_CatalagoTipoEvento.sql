@@ -1,14 +1,18 @@
+/****** Object:  StoredProcedure [dbo].[sp_CargarTiposEventoXML]    Script Date: 28/4/2026 21:54:41 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE OR ALTER PROCEDURE dbo.sp_CargarTiposEventoXML
-    @outResultCode INT OUTPUT
+
+ALTER PROCEDURE [dbo].[sp_CargarTiposEventoXML] 
+    @outResultCode INT OUTPUT 
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @xmlData XML = '
-    <Datos>
+
+    -- XML segmentado verticalmente para cumplir el estándar de lectura
+    DECLARE @xmlData XML = 
+    '<Datos>
         <TiposEvento>
             <TipoEvento Id="1" Nombre="Login Exitoso"/>
             <TipoEvento Id="2" Nombre="Login No Exitoso"/>
@@ -29,18 +33,44 @@ BEGIN
 
     BEGIN TRY
         BEGIN TRANSACTION
-            INSERT INTO dbo.TipoEvento (Id, Nombre)
+            -- Inserción manual de IDs (ya que no tiene Identity)
+            INSERT INTO dbo.TipoEvento (
+                Id
+                , Nombre
+            )
             SELECT 
                 T.Item.value('@Id', 'INT')
-                , T.Item.value('@Nombre', 'VARCHAR(128)')
+                , T.Item.value('@Nombre', 'VARCHAR(100)')
             FROM @xmlData.nodes('/Datos/TiposEvento/TipoEvento') AS T(Item);
         COMMIT TRANSACTION
+        
         SET @outResultCode = 0;
     END TRY
     BEGIN CATCH
-        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        IF @@TRANCOUNT > 0 
+            ROLLBACK TRANSACTION; 
+
         SET @outResultCode = 50008;
-        INSERT INTO dbo.DBError (UserName, Number, State, Severity, Line, [Procedure], Message)
-        VALUES (SUSER_SNAME(), ERROR_NUMBER(), ERROR_STATE(), ERROR_SEVERITY(), ERROR_LINE(), 'sp_CargarTiposEventoXML', ERROR_MESSAGE());
+
+        INSERT INTO dbo.DBError (
+            UserName
+            , Number
+            , State
+            , Severity
+            , Line
+            , [Procedure]
+            , Message
+            , DateTime
+        )
+        VALUES (
+            SUSER_SNAME()
+            , ERROR_NUMBER()
+            , ERROR_STATE()
+            , ERROR_SEVERITY()
+            , ERROR_LINE()
+            , 'sp_CargarTiposEventoXML'
+            , ERROR_MESSAGE()
+            , GETDATE()
+        );
     END CATCH
 END;
