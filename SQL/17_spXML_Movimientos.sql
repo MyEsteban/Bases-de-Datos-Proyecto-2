@@ -1,15 +1,19 @@
+/****** Object:  StoredProcedure [dbo].[sp_CargarMovimientosXML]    Script Date: 28/4/2026 21:48:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE OR ALTER PROCEDURE dbo.sp_CargarMovimientosXML
-    @outResultCode INT OUTPUT
+-- 7. MOVIMIENTOS
+ALTER PROCEDURE [dbo].[sp_CargarMovimientosXML] 
+    @outResultCode INT OUTPUT 
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @xmlData XML = '
-    <Datos>
+
+    -- Segmentamos el XML para evitar la línea larga
+    DECLARE @xmlData XML = 
+    '<Datos>
         <Movimientos>
             <movimiento ValorDocId="7517662" IdTipoMovimiento="Venta de vacaciones" Fecha="2024-01-18" Monto="2" PostByUser="hardingmicheal" PostInIP="42.142.119.153" PostTime="2024-01-18 18:47:14"/>
             <movimiento ValorDocId="6993943" IdTipoMovimiento="Bono vacacional" Fecha="2024-10-31" Monto="1" PostByUser="mgarrison" PostInIP="156.92.82.57" PostTime="2024-10-31 12:43:18"/>
@@ -58,25 +62,30 @@ BEGIN
             )
             SELECT 
                 E.Id
-                , TM.Id  -- Obtenemos el ID del tipo de movimiento por su nombre
+                , TM.Id
                 , T.Item.value('@Fecha', 'DATE')
                 , T.Item.value('@Monto', 'DECIMAL(10,2)')
-                , 0      -- Saldo inicial en 0 para la carga
-                , U.Id   -- Obtenemos el ID del usuario por su username
+                , 0
+                , U.Id
                 , T.Item.value('@PostInIP', 'VARCHAR(50)')
                 , T.Item.value('@PostTime', 'DATETIME')
             FROM @xmlData.nodes('/Datos/Movimientos/movimiento') AS T(Item)
-            INNER JOIN dbo.Empleado E ON E.ValorDocumentoIdentidad = T.Item.value('@ValorDocId', 'VARCHAR(20)')
-            INNER JOIN dbo.Usuario U ON U.Username = T.Item.value('@PostByUser', 'VARCHAR(50)')
-            INNER JOIN dbo.TipoMovimiento TM ON TM.Nombre = T.Item.value('@IdTipoMovimiento', 'VARCHAR(100)');
-            
+            INNER JOIN dbo.Empleado E 
+                ON E.ValorDocumentoIdentidad = T.Item.value('@ValorDocId', 'VARCHAR(20)')
+            INNER JOIN dbo.Usuario U 
+                ON U.Username = T.Item.value('@PostByUser', 'VARCHAR(50)')
+            INNER JOIN dbo.TipoMovimiento TM 
+                ON TM.Nombre = T.Item.value('@IdTipoMovimiento', 'VARCHAR(100)');
         COMMIT TRANSACTION
+        
         SET @outResultCode = 0;
     END TRY
     BEGIN CATCH
-        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        IF @@TRANCOUNT > 0 
+            ROLLBACK TRANSACTION; 
+
         SET @outResultCode = 50008;
-        
+
         INSERT INTO dbo.DBError (
             UserName
             , Number
@@ -85,6 +94,7 @@ BEGIN
             , Line
             , [Procedure]
             , Message
+            , DateTime
         )
         VALUES (
             SUSER_SNAME()
@@ -94,6 +104,7 @@ BEGIN
             , ERROR_LINE()
             , 'sp_CargarMovimientosXML'
             , ERROR_MESSAGE()
+            , GETDATE()
         );
     END CATCH
 END;
