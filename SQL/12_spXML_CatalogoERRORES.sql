@@ -1,10 +1,9 @@
+/****** Object:  StoredProcedure [dbo].[sp_CargarCatalogoErroresXML]    Script Date: 28/4/2026 21:47:09 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE OR ALTER PROCEDURE dbo.sp_CargarCatalogoErroresXML
-    @outResultCode INT OUTPUT
-AS
+ALTER   PROCEDURE [dbo].[sp_CargarCatalogoErroresXML] @outResultCode INT OUTPUT AS
 BEGIN
     SET NOCOUNT ON;
     DECLARE @xmlData XML = '
@@ -23,21 +22,18 @@ BEGIN
             <error Codigo="50011" Descripcion="Monto del movimiento rechazado pues si se aplicar el saldo seria negativo."/>
         </Error>
     </Datos>';
-
     BEGIN TRY
         BEGIN TRANSACTION
+            -- Aquí NO usamos IDENTITY_INSERT porque dejamos que el Id (PK) se genere solo
             INSERT INTO dbo.Error (Codigo, Descripcion)
             SELECT 
-                T.Item.value('@Codigo', 'INT')
-                , T.Item.value('@Descripcion', 'VARCHAR(250)')
-            FROM @xmlData.nodes('/Datos/Error/error') AS T(Item);
+                T.Item.value('@Codigo', 'INT'), 
+                T.Item.value('@Descripcion', 'VARCHAR(250)')
+            FROM @xmlData.nodes('//error') AS T(Item);
         COMMIT TRANSACTION
         SET @outResultCode = 0;
     END TRY
     BEGIN CATCH
-        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
-        SET @outResultCode = 50008;
-        INSERT INTO dbo.DBError (UserName, Number, State, Severity, Line, [Procedure], Message)
-        VALUES (SUSER_SNAME(), ERROR_NUMBER(), ERROR_STATE(), ERROR_SEVERITY(), ERROR_LINE(), 'sp_CargarCatalogoErroresXML', ERROR_MESSAGE());
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION; SET @outResultCode = 50008;
     END CATCH
 END;
