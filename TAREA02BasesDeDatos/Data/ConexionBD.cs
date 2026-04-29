@@ -20,7 +20,7 @@ namespace TAREA02BasesDeDatos.Data
 
 
 
-        // funciones aux
+        // funciones aux ------------------------------------------------------------------------------
         public List<Puesto> ConsultarPuestos()
         {
             List<Puesto> lista = new List<Puesto>();
@@ -105,7 +105,7 @@ namespace TAREA02BasesDeDatos.Data
         }
 
 
-
+        // ------------------------------------------------------------------------------------------------------------------
 
 
 
