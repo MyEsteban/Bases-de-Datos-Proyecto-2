@@ -1,14 +1,19 @@
+/****** Object:  StoredProcedure [dbo].[sp_CargarEmpleadosXML]    Script Date: 28/4/2026 21:34:58 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE OR ALTER PROCEDURE dbo.sp_CargarEmpleadosXML
-    @outResultCode INT OUTPUT
+
+-- 6. EMPLEADOS (Ajustado a minúsculas y nombres de tu XML)
+ALTER PROCEDURE [dbo].[sp_CargarEmpleadosXML] 
+    @outResultCode INT OUTPUT 
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @xmlData XML = '
-    <Datos>
+
+    -- XML formateado verticalmente para evitar la línea larga
+    DECLARE @xmlData XML = 
+    '<Datos>
         <Empleados>
             <empleado Puesto="Camarero" ValorDocumentoIdentidad="6993943" Nombre="Kaitlyn Jensen" FechaContratacion="2017-12-07"/>
             <empleado Puesto="Albañil" ValorDocumentoIdentidad="1896802" Nombre="Robert Buchanan" FechaContratacion="2020-09-20"/>
@@ -25,25 +30,60 @@ BEGIN
             <empleado Puesto="Niñera" ValorDocumentoIdentidad="3389054" Nombre="Sofía Herrera" FechaContratacion="2022-08-09"/>
         </Empleados>
     </Datos>';
-
+    
     BEGIN TRY
         BEGIN TRANSACTION
-            INSERT INTO dbo.Empleado (IdPuesto, ValorDocumentoIdentidad, Nombre, FechaContratacion, SaldoVacaciones, EsActivo)
+            INSERT INTO dbo.Empleado (
+                IdPuesto
+                , ValorDocumentoIdentidad
+                , Nombre
+                , FechaContratacion
+                , SaldoVacaciones
+                , EsActivo
+                , PostTime
+                , IpPostIn
+            )
             SELECT 
                 P.Id
                 , T.Item.value('@ValorDocumentoIdentidad', 'VARCHAR(20)')
                 , T.Item.value('@Nombre', 'VARCHAR(100)')
                 , T.Item.value('@FechaContratacion', 'DATE')
-                , 0, 1
+                , 0
+                , 1
+                , GETDATE()
+                , '127.0.0.1'
             FROM @xmlData.nodes('/Datos/Empleados/empleado') AS T(Item)
-            INNER JOIN dbo.Puesto P ON P.Nombre = T.Item.value('@Puesto', 'VARCHAR(100)');
+            INNER JOIN dbo.Puesto P 
+                ON (P.Nombre = T.Item.value('@Puesto', 'VARCHAR(100)'));
         COMMIT TRANSACTION
+        
         SET @outResultCode = 0;
     END TRY
     BEGIN CATCH
-        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        IF @@TRANCOUNT > 0 
+            ROLLBACK TRANSACTION; 
+            
         SET @outResultCode = 50008;
-        INSERT INTO dbo.DBError (UserName, Number, State, Severity, Line, [Procedure], Message)
-        VALUES (SUSER_SNAME(), ERROR_NUMBER(), ERROR_STATE(), ERROR_SEVERITY(), ERROR_LINE(), 'sp_CargarEmpleadosXML', ERROR_MESSAGE());
+        
+        INSERT INTO dbo.DBError (
+            UserName
+            , Number
+            , State
+            , Severity
+            , Line
+            , [Procedure]
+            , Message
+            , DateTime
+        )
+        VALUES (
+            SUSER_SNAME()
+            , ERROR_NUMBER()
+            , ERROR_STATE()
+            , ERROR_SEVERITY()
+            , ERROR_LINE()
+            , 'sp_CargarEmpleadosXML'
+            , ERROR_MESSAGE()
+            , GETDATE()
+        );
     END CATCH
 END;
