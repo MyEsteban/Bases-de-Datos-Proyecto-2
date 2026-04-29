@@ -1,14 +1,18 @@
+/****** Object:  StoredProcedure [dbo].[sp_CargarTiposMovimientosXML]    Script Date: 28/4/2026 21:56:22 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE OR ALTER PROCEDURE dbo.sp_CargarTiposMovimientosXML
-    @outResultCode INT OUTPUT
+
+ALTER PROCEDURE [dbo].[sp_CargarTiposMovimientosXML] 
+    @outResultCode INT OUTPUT 
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @xmlData XML = '
-    <Datos>
+
+    -- XML segmentado verticalmente para evitar la línea larga
+    DECLARE @xmlData XML = 
+    '<Datos>
         <TiposMovimientos>
             <TipoMovimiento Id="1" Nombre="Cumplir mes" TipoAccion="Credito"/>
             <TipoMovimiento Id="2" Nombre="Bono vacacional" TipoAccion="Credito"/>
@@ -21,19 +25,24 @@ BEGIN
 
     BEGIN TRY
         BEGIN TRANSACTION
-            INSERT INTO dbo.TipoMovimiento (Id, Nombre, TipoAccion)
+            INSERT INTO dbo.TipoMovimiento (
+                Id
+                , Nombre
+                , TipoAccion
+            )
             SELECT 
                 T.Item.value('@Id', 'INT')
                 , T.Item.value('@Nombre', 'VARCHAR(100)')
                 , T.Item.value('@TipoAccion', 'VARCHAR(10)')
-            FROM @xmlData.nodes('/Datos/TiposMovimientos/TipoMovimiento') AS T(Item);
+            FROM @xmlData.nodes('//TipoMovimiento') AS T(Item);
         COMMIT TRANSACTION
+        
         SET @outResultCode = 0;
     END TRY
     BEGIN CATCH
-        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        IF @@TRANCOUNT > 0 
+            ROLLBACK TRANSACTION; 
+            
         SET @outResultCode = 50008;
-        INSERT INTO dbo.DBError (UserName, Number, State, Severity, Line, [Procedure], Message)
-        VALUES (SUSER_SNAME(), ERROR_NUMBER(), ERROR_STATE(), ERROR_SEVERITY(), ERROR_LINE(), 'sp_CargarTiposMovimientosXML', ERROR_MESSAGE());
     END CATCH
 END;
